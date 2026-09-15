@@ -1,0 +1,18 @@
+Version 4
+SymbolType CELL
+RECTANGLE Normal -52 -36 52 40 2
+PIN 0 -32 NONE 8
+PINATTR PinName V+
+PINATTR SpiceOrder 5
+PIN -48 -16 NONE 8
+PINATTR PinName V_in+
+PINATTR SpiceOrder 3
+PIN -48 16 NONE 8
+PINATTR PinName V_in-
+PINATTR SpiceOrder 4
+PIN 0 32 NONE 8
+PINATTR PinName GND
+PINATTR SpiceOrder 2
+PIN 48 0 NONE 8
+PINATTR PinName OUT
+PINATTR SpiceOrder 1
