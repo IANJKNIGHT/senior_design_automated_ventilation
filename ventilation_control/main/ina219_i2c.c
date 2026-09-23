@@ -1,19 +1,19 @@
 #include <stdio.h>
 #include "driver/i2c.h"
-#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
+#include "sensor_data.h"
 
-#define I2C_MASTER_SCL_IO           22         // GPIO pin for SCL
-#define I2C_MASTER_SDA_IO           21         // GPIO pin for SDA
+#define I2C_MASTER_SCL_IO           8        // GPIO pin for SCL
+#define I2C_MASTER_SDA_IO           9        // GPIO pin for SDA
 #define I2C_MASTER_NUM              I2C_NUM_0  // I2C port number
 #define I2C_MASTER_FREQ_HZ          100000     // I2C master clock frequency
 #define I2C_MASTER_TX_BUF_DISABLE   0          // Master does not need buffer
 #define I2C_MASTER_RX_BUF_DISABLE   0
 
-#define INA219_ADDR                 0x40       // Default I2C address
+#define INA219_ADDR                 0x41       // Default I2C address
 #define INA219_REG_CURRENT          0x04       // Current register address
 #define INA219_REG_CALIBRATION      0x05       // Calibration register address
 
@@ -48,11 +48,7 @@ static esp_err_t ina219_read_register(uint8_t reg, uint16_t *value) {
 void ina219_task(void *pvParameters) {
     // Write 32V / 2A calibration value (4096) to Calibration Register (0x05)
     uint16_t cal_val = 4096;
-    if (ina219_write_register(INA219_REG_CALIBRATION, cal_val) == ESP_OK) {
-        printf("INA219 Calibrated successfully.");
-    } else {
-        printf("Failed to write INA219 calibration register.");
-    }
+    ina219_write_register(INA219_REG_CALIBRATION, cal_val);
 
     while (1) {
         uint16_t raw_current;
@@ -60,9 +56,8 @@ void ina219_task(void *pvParameters) {
             int16_t signed_current = (int16_t)raw_current;
             // With 4096 calibration and 0.1 ohm shunt, Current LSB = 100uA (0.1 mA) per bit
             float current_mA = signed_current * 0.1f;
+            g_sensor_data.power = current_mA * 12;
             printf("Current: %.2f mA", current_mA);
-        } else {
-            printf("Failed to read INA219 current register.");
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
     }

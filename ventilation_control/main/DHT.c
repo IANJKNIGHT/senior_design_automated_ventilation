@@ -4,20 +4,11 @@
 #include "driver/gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_log.h"
+#include "sensor_data.h"
 
 #define DHT11_PIN GPIO_NUM_27
 
 static const char *TAG = "DHT11";
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void dht11_task(void *pvParameters);
-
-#ifdef __cplusplus
-}
-#endif
 
 static esp_err_t read_dht11(uint8_t *humidity, uint8_t *temperature) {
     uint8_t data[5] = {0};
@@ -115,11 +106,9 @@ void dht11_task(void *pvParameters) {
         esp_err_t res = read_dht11(&hum, &temp);
 
         if (res == ESP_OK) {
-            ESP_LOGI(TAG, "Humidity: %d %%, Temp: %d deg C", hum, temp);
-        } else if (res == ESP_ERR_INVALID_CRC) {
-            ESP_LOGE(TAG, "Checksum failed (CRC Error)");
-        } else {
-            ESP_LOGE(TAG, "Failed to read sensor data (Timeout / Err: %d)", res);
+            // Update shared struct
+            g_sensor_data.humidity = hum;
+            g_sensor_data.temperature = temp;
         }
 
         vTaskDelay(pdMS_TO_TICKS(2000));
