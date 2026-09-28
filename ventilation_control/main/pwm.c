@@ -1,17 +1,4 @@
-#include <stdio.h>
-#include "driver/ledc.h"
-#include "esp_log.h"
-
-#define PWM_GPIO 2
-#define NUM_FANS 3
-// Extern global variable for fan duty cycles
-extern ledc_timer_config_t ledc_fan_timer[NUM_FANS];
-extern ledc_channel_config_t ledc_fan_channel[NUM_FANS];
-extern ledc_timer_config_t ledc_servo_timer[2*NUM_FANS];
-extern ledc_channel_config_t ledc_servo_channel[2*NUM_FANS];
-extern int fan_duty[NUM_FANS];
-extern int servo_duty[2*NUM_FANS];
-extern int duty_cycle_to_bits(int duty_cycle);
+#include "pwm.h"
 
 void configure_fan_pwm(void)
 {
