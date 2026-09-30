@@ -15,6 +15,4 @@ b. 'git add .'
 c. git commit -m "<some message>"
 d. git remote -v (make sure that you are committing to the correct github repo)
 e. git push --set-upstream origin <your-new-branch-name>
-f. git push
-
-7. 
+f. git push 
