@@ -39,5 +39,5 @@
     }
   },
   "terminal.integrated.defaultProfile.windows": "ESP-IDF PowerShell",
-  "idf.portWin": "COM8"
+  "idf.port": "COM8"
 }

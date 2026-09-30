@@ -94,36 +94,32 @@ void pca9685_set_pwm(uint8_t channel, uint16_t on, uint16_t off)
 {
     uint8_t base_reg = 0x06 + (4 * channel);
 
-    uint8_t buf[5];
-    buf[0] = base_reg;
-    buf[1] = (uint8_t)(on & 0xFF);         // ON Low byte
-    buf[2] = (uint8_t)((on >> 8) & 0xFF);  // ON High byte
-    buf[3] = (uint8_t)(off & 0xFF);        // OFF Low byte
-    buf[4] = (uint8_t)((off >> 8) & 0xFF); // OFF High byte
-
-    // Auto-Increment in MODE1 will automatically step base_reg -> base_reg+1 -> base_reg+2 -> base_reg+3
-    i2c_master_write_to_device(I2C_MASTER_NUM, PCA9685_ADDR, buf, sizeof(buf), pdMS_TO_TICKS(1000));
+    pca9685_write_reg(base_reg + 0, (uint8_t)(on & 0xFF));         // LEDn_ON_L
+    pca9685_write_reg(base_reg + 1, (uint8_t)((on >> 8) & 0xFF));  // LEDn_ON_H
+    pca9685_write_reg(base_reg + 2, (uint8_t)(off & 0xFF));        // LEDn_OFF_L
+    pca9685_write_reg(base_reg + 3, (uint8_t)((off >> 8) & 0xFF)); // LEDn_OFF_H
 }
 
 void pca9685_set_freq(float freq)
 {
-    // 1. Calculate prescale
-    float prescale_val = (25000000.0 / (4096.0 * freq)) - 1.0f;
+    // 1. Calculate prescale value
+    float prescale_val = (25000000.0f / (4096.0f * freq)) - 1.0f;
     uint8_t prescale = (uint8_t)(prescale_val + 0.5f);
 
-    // 2. Put PCA9685 into SLEEP mode to write PRESCALE (preserve Auto-Inc bit 0x20)
-    pca9685_write_reg(PCA9685_MODE1, MODE1_SLEEP | MODE1_AUTOINC); // Changed from 0x10
+    // 2. Read old MODE1 register state (or construct with AUTOINC + SLEEP)
+    // Put oscillator to sleep to allow writing to PRESCALE
+    pca9685_write_reg(PCA9685_MODE1, MODE1_SLEEP | MODE1_AUTOINC); // 0x30
     vTaskDelay(pdMS_TO_TICKS(2));
 
-    // 3. Write Prescale value
+    // 3. Write prescaler
     pca9685_write_reg(PCA9685_PRESCALE, prescale);
 
-    // 4. Wake up from SLEEP (keep Auto-Inc active)
-    pca9685_write_reg(PCA9685_MODE1, MODE1_AUTOINC);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    // 4. Wake up oscillator (turn off SLEEP, preserve AUTOINC)
+    pca9685_write_reg(PCA9685_MODE1, MODE1_AUTOINC); // 0x20
+    vTaskDelay(pdMS_TO_TICKS(5)); // Allow oscillator time to stabilize (>500us)
 
-    // 5. Restart logic: keep Auto-Inc (0x20) alongside Restart (0x80)
-    pca9685_write_reg(PCA9685_MODE1, MODE1_RESTART | MODE1_AUTOINC); // Changed from 0xA0 to explicit flags
+    // 5. Trigger RESTART with AUTOINC enabled to resume PWM channels
+    pca9685_write_reg(PCA9685_MODE1, MODE1_RESTART | MODE1_AUTOINC); // 0xA0
 }
 
 void init_pca9685(void)

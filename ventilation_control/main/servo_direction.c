@@ -13,7 +13,7 @@
 extern void pca9685_set_pwm(uint8_t channel, uint16_t on, uint16_t off);
 
 static uint16_t x_servo_channel = 0;
-static uint16_t y_servo_channel = 1;
+static uint16_t y_servo_channel = 4;
 
 void sweep_servo_step(void)
 {
