@@ -1,10 +1,24 @@
+#include "ina219_i2c.h"
+
 #include <stdio.h>
-#include "driver/i2c.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2c.h"
 #include "esp_log.h"
+
 #include "sensor_data.h"
+
+#define I2C_MASTER_SCL_IO          8        // GPIO pin for SCL
+#define I2C_MASTER_SDA_IO          9        // GPIO pin for SDA
+#define I2C_MASTER_NUM             I2C_NUM_0  // I2C port number
+#define I2C_MASTER_FREQ_HZ         100000     // I2C master clock frequency
+#define I2C_MASTER_TX_BUF_DISABLE  0          // Master does not need buffer
+#define I2C_MASTER_RX_BUF_DISABLE  0
+
+#define INA219_ADDR                0x41       // Default I2C address
+#define INA219_REG_CURRENT         0x04       // Current register address
+#define INA219_REG_CALIBRATION     0x05       // Calibration register address
 
 #define I2C_MASTER_SCL_IO           8        // GPIO pin for SCL
 #define I2C_MASTER_SDA_IO           9        // GPIO pin for SDA
@@ -57,21 +71,38 @@ void ina219_task(void *pvParameters) {
             // With 4096 calibration and 0.1 ohm shunt, Current LSB = 100uA (0.1 mA) per bit
             float current_mA = signed_current * 0.1f;
             g_sensor_data.power = current_mA * 12;
-            printf("Current: %.2f mA", current_mA);
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
 
-void sweep_i2c(void) {
-    uint8_t address;
-    esp_err_t ret;
-    uint8_t dummy_reg = 0x00; // Probe register 0x00
+// void sweep_i2c(void) {
+//     uint8_t address;
+//     esp_err_t ret;
+//     uint8_t dummy_reg = 0x00; // Probe register 0x00
 
+//     printf("Scanning I2C bus...\n");
+//     for (address = 1; address < 127; address++) {
+//         // Write 1 byte to probe device ACK
+//         ret = i2c_master_write_to_device(I2C_NUM_0, address, &dummy_reg, 1, pdMS_TO_TICKS(50));
+//         if (ret == ESP_OK) {
+//             printf("Found device at 0x%02X\n", address);
+//         }
+//     }
+//     printf("I2C scan complete.\n");
+// }
+
+void sweep_i2c(void) {
     printf("Scanning I2C bus...\n");
-    for (address = 1; address < 127; address++) {
-        // Write 1 byte to probe device ACK
-        ret = i2c_master_write_to_device(I2C_NUM_0, address, &dummy_reg, 1, pdMS_TO_TICKS(50));
+    for (uint8_t address = 1; address < 127; address++) {
+        i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+        i2c_master_start(cmd);
+        i2c_master_write_byte(cmd, (address << 1) | I2C_MASTER_WRITE, true);
+        i2c_master_stop(cmd);
+        
+        esp_err_t ret = i2c_master_cmd_begin(I2C_NUM_0, cmd, pdMS_TO_TICKS(50));
+        i2c_cmd_link_delete(cmd);
+
         if (ret == ESP_OK) {
             printf("Found device at 0x%02X\n", address);
         }

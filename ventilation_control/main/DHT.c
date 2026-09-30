@@ -1,12 +1,16 @@
+#include "DHT.h"
+
 #include <stdio.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_log.h"
+
 #include "sensor_data.h"
 
-#define DHT11_PIN GPIO_NUM_27
+#define DHT11_PIN 17
 
 static const char *TAG = "DHT11";
 

@@ -1,7 +1,7 @@
 import serial
 
 # Replace 'COM3' with your ESP32 port (e.g., '/dev/ttyUSB0' on Linux/Mac)
-ser = serial.Serial('COM3', 115200)
+ser = serial.Serial('COM9', 115200)
 
 with open('sensor_log.csv', 'a') as file:
     print("Logging started. Press Ctrl+C to stop.")
