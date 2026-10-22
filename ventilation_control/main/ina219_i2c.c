@@ -20,7 +20,7 @@
 #define INA219_REG_CURRENT         0x04       // Current register address
 #define INA219_REG_CALIBRATION     0x05       // Calibration register address
 
-#define I2C_MASTER_SCL_IO           8        // GPIO pin for SCL
+#define I2C_MASTER_SCL_IO           8        // GPIO pin for SCL    
 #define I2C_MASTER_SDA_IO           9        // GPIO pin for SDA
 #define I2C_MASTER_NUM              I2C_NUM_0  // I2C port number
 #define I2C_MASTER_FREQ_HZ          100000     // I2C master clock frequency

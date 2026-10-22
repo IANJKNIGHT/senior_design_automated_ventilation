@@ -14,8 +14,10 @@
 #define TAG "PWM Example"
 
 // Define tests
-#define TEST_INA219_W_FAN
-#define TEST_SERVO_FAN_SWEEP_W_I2C
+// #define TEST_INA219_W_FAN
+// #define TEST_SERVO_FAN_SWEEP_W_I2C
+// #define MAX_485_SEND_TEST
+#define MAX_485_RECEIVE_TEST
 
 // Global shared struct definition
 sensor_data_t g_sensor_data = {0, 0, 10, 0.0f};
@@ -54,23 +56,27 @@ extern void configure_fan_pwm(void);
 // Servo Control Function Declarations
 extern void sweep_servo_step(void);
 
+// UART CONSTANTS
+#define UART_PORT (UART_NUM_1)
+
 // UART Function Declarations
-extern void init_node_hw(void);
+extern void int_uart();
 
 // UART Variables
-extern uint8_t rx_packet_buf[3];
-volatile int rx_idx;
-volatile bool packet_ready;
-extern volatile bool sweep_active;
 
 void app_main(void)
 {
     // Initialize Hardware
     configure_fan_pwm();
     init_i2c();
-    init_node_hw();
+    init_uart();
     init_pca9685();
     sweep_i2c();
+    uint8_t send_receive = {0x01}; // 0x01 for send and 0x00 for receive
+    uint8_t device_ID = {0xF0};    // 0xF0
+    uint8_t duty_cycle = {0x0A};   // 10% duty cycle
+    uint8_t tx_data[3] = {send_receive, device_ID, duty_cycle};
+    const char test_byte = 0x55; // Test byte to send down the UART
 
 #if defined(TEST_SERVO_FAN_SWEEP_W_I2C)
     pca9685_set_freq(50); // Set frequency to 50Hz for servo control
@@ -84,8 +90,7 @@ void app_main(void)
         NULL,
         5,
         NULL,
-        1
-    );
+        1);
 
 #if defined(TEST_INA219_W_FAN)
     xTaskCreate(ina219_task, "ina219_task", 4096, NULL, 5, NULL);
@@ -105,6 +110,33 @@ void app_main(void)
                g_sensor_data.power);
 #endif
 
+#if defined(MAX_485_SEND_TEST)
+        // uart_write_bytes(UART_PORT, (const char *)tx_data, sizeof(tx_data));
+        // Transmit 1 byte down the UART fifo
+        // Example transmission on the sender node
+        uart_write_bytes(UART_NUM_1, "Hello RS485\n", 12);
+
+        // Block until transmit FIFO is completely empty and hardware stop bit finishes
+        uart_wait_tx_done(UART_PORT, pdMS_TO_TICKS(100));
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+#endif
+
+#if defined(MAX_485_RECEIVE_TEST)
+        uint8_t rx_buffer[128];
+        // Read incoming bytes with a 1000ms timeout
+        int length = uart_read_bytes(UART_PORT, rx_buffer, sizeof(rx_buffer) - 1, pdMS_TO_TICKS(1000));
+
+        if (length > 0)
+        {
+            rx_buffer[length] = '\0'; // Null-terminate string safely
+            printf("Received from bus: %s\n", rx_buffer);
+        }
+        else
+        {
+            // Optional: Keep silent or print a heartbeat
+        }
+#endif
 #if defined(TEST_SERVO_FAN_SWEEP_W_I2C)
         sweep_servo_step();
 #endif
